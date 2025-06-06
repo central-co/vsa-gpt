@@ -55,6 +55,15 @@ __global__ void tensor_rand_kernel(float *data, size_t elems_this_chunk, unsigne
     }
 }
 
+__global__ void relu_kernel(float *data, size_t n) {
+    size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        if (data[idx] < 0.0f) {
+            data[idx] = 0.0f;
+        }
+    }
+}
+
 __global__ void matmul_chunk_kernel( const float *A_sub, const float *B_sub, float *C_sub, int m, int p, int n_sub) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -571,6 +580,47 @@ void cuda_get_info() {
         printf("  Max grid dimensions: x = %d, y = %d, z = %d\n",
                prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
     }
+}
+
+void tensor_relu_cuda(Tensor *A, size_t chunk_size) {
+    if (!A) {
+        fprintf(stderr, "tensor_relu_cuda: input tensor is NULL\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t N = A->size;
+    size_t num_chunks = (N + chunk_size - 1) / chunk_size;
+    size_t bytes_chunk = chunk_size * sizeof(float);
+
+    float *d_data = NULL;
+    cudaError_t err = cudaMalloc((void**)&d_data, bytes_chunk);
+    if (err != cudaSuccess) {
+        fprintf(stderr, "tensor_relu_cuda: cudaMalloc failed: %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    const int threads_per_block = 256;
+
+    for (size_t chunk_idx = 0; chunk_idx < num_chunks; ++chunk_idx) {
+        size_t offset = chunk_idx * chunk_size;
+        size_t elems_this_chunk = chunk_size;
+        if (offset + elems_this_chunk > N) {
+            elems_this_chunk = N - offset;
+        }
+        size_t bytes_this = elems_this_chunk * sizeof(float);
+
+        cudaMemcpy(d_data, A->data + offset, bytes_this, cudaMemcpyHostToDevice);
+
+        int blocks_per_grid = (int)((elems_this_chunk + threads_per_block - 1) / threads_per_block);
+        relu_kernel<<<blocks_per_grid, threads_per_block>>>(d_data, elems_this_chunk);
+
+        cudaGetLastError();
+        cudaDeviceSynchronize();
+
+        cudaMemcpy(A->data + offset, d_data, bytes_this, cudaMemcpyDeviceToHost);
+    }
+
+    cudaFree(d_data);
 }
 
 //test

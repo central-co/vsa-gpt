@@ -27,4 +27,6 @@ void cuda_get_info();
 
 void tensor_show(Tensor *t);
 
+void tensor_relu_cuda(Tensor *A, size_t chunk_size=256);
+
 #endif
