@@ -16,3 +16,4 @@ void __array_print(void *array, size_t length, size_t elem_size, void (*printer)
     }
     printf("\n");
 }
+

@@ -573,19 +573,20 @@ void cuda_get_info() {
     }
 }
 
-// int main(void) {
-//     int ndim = 2;
-//     int shape[ndim] = {6, 6};
+//test
+int main(void) {
+    int ndim = 2;
+    int shape[ndim] = {6, 6};
 
-//     Tensor *A = tensor_rand_cuda(ndim, shape);
-//     tensor_show(A);
+    Tensor *A = tensor_rand_cuda(ndim, shape);
+    tensor_show(A);
 
-//     Tensor *B = tensor_rand_cuda(ndim, shape);
-//     tensor_show(B);
+    Tensor *B = tensor_rand_cuda(ndim, shape);
+    tensor_show(B);
 
-//     Tensor *out = tensor_new(ndim, shape);
-//     tensor_matmul_cuda(out, A, B);
-//     tensor_show(out);
+    Tensor *out = tensor_new(ndim, shape);
+    tensor_matmul_cuda(out, A, B);
+    tensor_show(out);
 
-//     return 0;
-// }
+    return 0;
+}
